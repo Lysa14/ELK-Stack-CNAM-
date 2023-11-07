@@ -1,0 +1,49 @@
+---
+- name: Install ELK Stack on CentOS
+  hosts: localhost
+  become: yes
+  become_method: sudo
+
+  tasks:
+    - name: Install Java (required for Elasticsearch)
+      package:
+        name: java-1.8.0-openjdk
+        state: present
+      when: ansible_os_family == 'RedHat'
+
+    - name: Add Elastic YUM repository key
+      rpm_key:
+        key: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+      when: ansible_os_family == 'RedHat'
+
+    - name: Add Elastic YUM repository
+      yum_repository:
+        name: elasticsearch
+        description: Elasticsearch repository for 7.x packages
+        baseurl: https://artifacts.elastic.co/packages/7.x/yum
+        gpgcheck: yes
+        gpgkey: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+        enabled: yes
+      when: ansible_os_family == 'RedHat'
+
+    - name: Install Elasticsearch, Logstash, and Kibana
+      package:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - elasticsearch
+        - logstash
+        - kibana
+      when: ansible_os_family == 'RedHat'
+
+    - name: Start and enable Elasticsearch, Logstash, and Kibana services
+      systemd:
+        name: "{{ item }}"
+        enabled: yes
+        state: started
+      loop:
+        - elasticsearch
+        - logstash
+        - kibana
+      when: ansible_os_family == 'RedHat'
+
